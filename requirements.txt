@@ -1,24 +1,27 @@
+streamlit>=1.40.0
+
 # LangChain Core
 langchain
 langchain-core
 langchain_community
 
-# OpenAI Integration
+# OpenAI Integration (optional, used in some demos)
 langchain-openai
 openai
 
-# Anthropic Integration
+# Anthropic Integration (optional)
 langchain-anthropic
 
-# Google Gemini (PaLM) Integration
+# Google Gemini Integration
 langchain-google-genai
 google-generativeai
 
-# Hugging Face Integration
+# Hugging Face Integration (used in ai_suggester.py)
 langchain-huggingface
 transformers
 huggingface-hub
 sentence-transformers
+
 # Environment Variable Management
 python-dotenv
 
@@ -26,7 +29,7 @@ python-dotenv
 numpy
 scikit-learn
 
-#Pytorch  --If asked to install when run the open source model from huggingface. 
+# PyTorch (only needed for some Hugging Face models)
 torch
 torchvision
 torchaudio
