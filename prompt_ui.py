@@ -1,10 +1,12 @@
 from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
 import streamlit as st
+import os
 
 load_dotenv()
 
-model = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
+GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
+HAS_GEMINI = bool(GEMINI_API_KEY)
 
 st.set_page_config(
     page_title="Research Console",
@@ -116,13 +118,20 @@ prompt = st.text_input(
     placeholder="Ask a focused research question or describe the topic.",
 )
 
-if st.button("Summarize", type="primary"):
-    if prompt.strip():
-        with st.spinner("Generating summary…"):
-            result = model.invoke(prompt)
-            st.markdown('<div class="result-container">', unsafe_allow_html=True)
-            st.markdown("### Summary")
-            st.write(result.content)
-            st.markdown("</div>", unsafe_allow_html=True)
-    else:
-        st.warning("Enter a prompt to summarize.")
+if not HAS_GEMINI:
+    st.info(
+        "Cloud research is disabled because no Gemini API key is configured. "
+        "Set GOOGLE_API_KEY or GEMINI_API_KEY in your environment or Streamlit secrets to enable it."
+    )
+else:
+    if st.button("Summarize", type="primary"):
+        if prompt.strip():
+            with st.spinner("Generating summary…"):
+                model = ChatGoogleGenerativeAI(model="gemini-2.5-flash", api_key=GEMINI_API_KEY)
+                result = model.invoke(prompt)
+                st.markdown('<div class="result-container">', unsafe_allow_html=True)
+                st.markdown("### Summary")
+                st.write(result.content)
+                st.markdown("</div>", unsafe_allow_html=True)
+        else:
+            st.warning("Enter a prompt to summarize.")

@@ -231,14 +231,26 @@ tab1, tab2 = st.tabs(["Analysis", "AI Suggestions"])
 with tab1:
     st.caption("Paste Python below and run static checks plus formatting.")
 
+    btn_col1, btn_col2 = st.columns([1, 1])
+    with btn_col1:
+        analyze_clicked = st.button("Run analysis", type="primary", use_container_width=False)
+    with btn_col2:
+        refresh_clicked = st.button("Refresh", use_container_width=False)
+
+    if refresh_clicked:
+        # Clear widget + derived state, then rerun before widgets instantiate.
+        st.session_state["source_code"] = ""
+        st.session_state.pop("analyzed_code", None)
+        st.session_state.pop("ai_suggestions", None)
+        st.rerun()
+
     code = st.text_area(
         "Source code",
         height=260,
         placeholder="Paste or type Python here…",
         help="The code is never stored; it is only used for this analysis session.",
+        key="source_code",
     )
-
-    analyze_clicked = st.button("Run analysis", type="primary", use_container_width=False)
 
     if analyze_clicked:
         if not code:
