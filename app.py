@@ -89,11 +89,12 @@ st.markdown(
     """
     <style>
     .stApp {
-        background-color: #05060a;
-        color: #e5e7eb;
+        background-color: #070912;
+        color: #f3f4f6;
         font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Mono",
                      Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-        font-size: 15px;
+        font-size: 17px;
+        line-height: 1.55;
     }
 
     .main .block-container {
@@ -112,16 +113,16 @@ st.markdown(
     }
 
     .header-title {
-        font-size: 1.4rem;
+        font-size: 1.6rem;
         font-weight: 600;
         letter-spacing: 0.06em;
         text-transform: uppercase;
-        color: #e5e7eb;
+        color: #f9fafb;
     }
 
     .header-subtitle {
-        font-size: 0.9rem;
-        color: #9ca3af;
+        font-size: 1rem;
+        color: #cbd5e1;
     }
 
     .stTabs [data-baseweb="tab-list"] {
@@ -133,35 +134,35 @@ st.markdown(
         background-color: transparent;
         border-radius: 0;
         padding: 0.5rem 1rem;
-        color: #9ca3af;
-        font-size: 0.95rem;
+        color: #cbd5e1;
+        font-size: 1.05rem;
         text-transform: uppercase;
         letter-spacing: 0.08em;
     }
 
     .stTabs [aria-selected="true"] {
         border-bottom: 2px solid #3b82f6;
-        color: #e5e7eb;
+        color: #f9fafb;
     }
 
     .stTextArea textarea {
-        background-color: #05060a;
+        background-color: #070912;
         border-radius: 4px;
-        border: 1px solid #111827;
+        border: 1px solid #243244;
         padding: 1rem;
         font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas,
                      "Liberation Mono", "Courier New", monospace;
-        font-size: 0.9rem;
-        color: #e5e7eb;
+        font-size: 1rem;
+        color: #f3f4f6;
     }
 
     .stButton > button {
         background-color: #111827;
-        color: #e5e7eb;
+        color: #f9fafb;
         border-radius: 4px;
         border: 1px solid #374151;
         padding: 0.55rem 1.4rem;
-        font-size: 0.9rem;
+        font-size: 1rem;
     }
 
     .stButton > button:hover {
@@ -171,36 +172,36 @@ st.markdown(
 
     .stAlert {
         border-radius: 4px;
-        border: 1px solid #111827;
-        background-color: #05060a;
-        font-size: 0.95rem;
+        border: 1px solid #243244;
+        background-color: #070912;
+        font-size: 1.05rem;
     }
 
     .streamlit-expanderHeader {
-        background-color: #05060a;
-        color: #e5e7eb;
-        border-bottom: 1px solid #111827;
+        background-color: #070912;
+        color: #f3f4f6;
+        border-bottom: 1px solid #243244;
     }
 
     .streamlit-expanderContent {
-        background-color: #05060a;
-        border-left: 1px solid #111827;
-        border-right: 1px solid #111827;
-        border-bottom: 1px solid #111827;
+        background-color: #070912;
+        border-left: 1px solid #243244;
+        border-right: 1px solid #243244;
+        border-bottom: 1px solid #243244;
     }
 
     code, pre {
         font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas,
                      "Liberation Mono", "Courier New", monospace !important;
-        font-size: 0.9rem !important;
+        font-size: 1rem !important;
     }
 
     h3 {
-        font-size: 1.05rem;
+        font-size: 1.2rem;
         font-weight: 600;
         margin-top: 1.75rem;
         margin-bottom: 0.75rem;
-        color: #e5e7eb;
+        color: #f9fafb;
     }
     </style>
     """,
@@ -224,7 +225,7 @@ with title_col:
         unsafe_allow_html=True,
     )
 
-tab1, tab2 = st.tabs(["Analysis", "AI Suggestions"])
+tab1, tab2, tab3 = st.tabs(["Analysis", "AI Suggestions", "History"])
 
 
 
@@ -301,6 +302,18 @@ with tab1:
                 suggestions = get_ai_suggestions(code)
                 st.session_state["ai_suggestions"] = suggestions
 
+            # Append to in-memory analysis history
+            history = st.session_state.get("history", [])
+            history.append(
+                {
+                    "code": code,
+                    "errors": error_result if error_result.get("success") else None,
+                    "suggestions": suggestions,
+                    "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                }
+            )
+            st.session_state["history"] = history
+
 
 with tab2:
     st.caption("Model-level suggestions based on the last analysis.")
@@ -319,3 +332,35 @@ with tab2:
     else:
         st.info("Run analysis in the Analysis tab to generate suggestions.")
 
+
+with tab3:
+    st.caption("History of previous analyses for this session.")
+
+    history = st.session_state.get("history", [])
+    if not history:
+        st.info("No history yet. Run an analysis to populate this view.")
+    else:
+        # Show newest first
+        for idx, item in enumerate(reversed(history), start=1):
+            ts = item.get("timestamp", "Unknown time")
+            title = f"Run {len(history) - idx + 1} – {ts}"
+            with st.expander(title, expanded=False):
+                st.markdown("**Original code**")
+                st.code(item.get("code", ""), language="python")
+
+                errors = item.get("errors")
+                if errors and errors.get("error_count", 0) > 0:
+                    st.markdown(f"**Static issues** ({errors['error_count']}):")
+                    for err in errors["errors"]:
+                        line_info = f" (line {err.get('line')})" if err.get("line") not in (None, "Unknown") else ""
+                        st.markdown(f"- **{err['type']}**{line_info}: {err['message']}")
+                else:
+                    st.markdown("**Static issues**: none detected in this run.")
+
+                suggs = item.get("suggestions") or []
+                if suggs:
+                    st.markdown("**AI suggestions**")
+                    for s in suggs:
+                        st.markdown(s.get("message", ""))
+                else:
+                    st.markdown("**AI suggestions**: none recorded.")
